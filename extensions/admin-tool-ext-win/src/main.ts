@@ -11,83 +11,147 @@ import * as azdata from 'azdata';
 import * as vscode from 'vscode';
 import { IConfig, ServerProvider } from 'service-downloader';
 import { Telemetry } from './telemetry';
-import * as utils from './utils';
-import { ChildProcess, exec, ExecException } from 'child_process';
-import { stringify } from 'querystring';
+import { doubleEscapeSingleQuotes, backEscapeDoubleQuotes, getConfiguration } from './utils';
+import { ChildProcess, exec } from 'child_process';
 
 const baseConfig = require('./config.json');
 const localize = nls.loadMessageBundle();
 let exePath: string;
 let runningProcesses: Map<number, ChildProcess> = new Map<number, ChildProcess>();
 
+
+interface SmoMapping {
+    action: string;
+    urnName: string;
+}
+
+const nodeTypeToUrnNameMapping: { [oeNodeType: string]: SmoMapping } = {
+    'Database': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Database', urnName: 'Database' },
+    'Server': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Server', urnName: 'Server' },
+    'ServerLevelServerAudit': { action: 'sqla:AuditProperties', urnName: 'Audit' },
+    'ServerLevelCredential': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Credential', urnName: 'Credential' },
+    'ServerLevelServerRole': { action: 'sqla:ManageServerRole', urnName: 'Role' },
+    'ServerLevelServerAuditSpecification': { action: 'sqla:ServerAuditSpecificationProperties', urnName: 'ServerAuditSpecification' },
+    // 'ServerLevelServerTrigger': {typeName:'ServerDdlTrigger', urnName:'DdlTrigger'},
+    'ServerLevelLinkedServer': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.LinkedServer', urnName: 'LinkedServer' },
+    'Table': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Table', urnName: 'Table' },
+    'View': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.View', urnName: 'View' },
+    'Column': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Column', urnName: 'Column' },
+    'Index': { action: 'sqla:IndexProperties', urnName: 'Index' },
+    'Statistic': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Statistic', urnName: 'Statistic' },
+    'StoredProcedure': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.StoredProcedure', urnName: 'StoredProcedure' },
+    'ScalarValuedFunction': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.UserDefinedFunction', urnName: 'UserDefinedFunction' },
+    'TableValuedFunction': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.UserDefinedFunction', urnName: 'UserDefinedFunction' },
+    'AggregateFunction': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.UserDefinedFunction', urnName: 'UserDefinedFunction' },
+    'Synonym': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Synonym', urnName: 'Synonym' },
+    'Assembly': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.SqlAssembly', urnName: 'SqlAssembly' },
+    'UserDefinedDataType': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.UserDefinedDataType', urnName: 'UserDefinedDataType' },
+    'UserDefinedType': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.UserDefinedType', urnName: 'UserDefinedType' },
+    'UserDefinedTableType': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.UserDefinedTableType', urnName: 'UserDefinedTableType' },
+    'Sequence': { action: 'sqla:SequenceProperties', urnName: 'Sequence' },
+    'User': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.User', urnName: 'User' },
+    'DatabaseRole': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.DatabaseRole', urnName: 'Role' },
+    'ApplicationRole': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.ApplicationRole', urnName: 'ApplicationRole' },
+    'Schema': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Schema', urnName: 'Schema' },
+    'SecurityPolicy': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.SecurityPolicy', urnName: 'SecurityPolicy' },
+    // TODO: CHGAGNON remove this once SqlToolsService is updated to fix the naming typo
+    'SecurityPolicie': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.SecurityPolicy', urnName: 'SecurityPolicy' },
+    'ServerLevelLogin': { action: 'sqla:Properties@Microsoft.SqlServer.Management.Smo.Login', urnName: 'Login' },
+};
+
 // Params to pass to SsmsMin.exe, only an action and server are required - the rest are optional based on the
 // action used. Exported for use in testing.
 export interface LaunchSsmsDialogParams {
-	action: string;
-	server: string;
-	database?: string;
-	user?: string;
-	password?: string;
-	useAad?: boolean;
-	urn?: string;
+    action: string;
+    server: string;
+    database?: string;
+    user?: string;
+    password?: string;
+    useAad?: boolean;
+    urn?: string;
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-	// This is for Windows-specific support so do nothing on other platforms
-	if (process.platform === 'win32') {
-		Telemetry.sendTelemetryEvent('startup/ExtensionActivated');
+    // This is for Windows-specific support so do nothing on other platforms
+    if (process.platform === 'win32') {
+        Telemetry.sendTelemetryEvent('startup/ExtensionActivated');
 
-		let config: IConfig = JSON.parse(JSON.stringify(baseConfig));
-		config.installDirectory = path.join(context.extensionPath, config.installDirectory);
-		config.proxy = utils.getConfiguration('http').get('proxy');
-		config.strictSSL = utils.getConfiguration('http').get('proxyStrictSSL') || true;
+        let config: IConfig = JSON.parse(JSON.stringify(baseConfig));
+        config.installDirectory = path.join(context.extensionPath, config.installDirectory);
+        config.proxy = getConfiguration('http').get('proxy');
+        config.strictSSL = getConfiguration('http').get('proxyStrictSSL') || true;
 
-		const serverdownloader = new ServerProvider(config);
-		const installationStart = Date.now();
+        const serverdownloader = new ServerProvider(config);
+        const installationStart = Date.now();
 
-		try {
-			let downloadedExePath = await serverdownloader.getOrDownloadServer();
-			const installationComplete = Date.now();
+        try {
+            let downloadedExePath = await serverdownloader.getOrDownloadServer();
+            const installationComplete = Date.now();
 
-			// Don't register the command if we couldn't find the EXE since it won't be able to do anything
-			if (downloadedExePath) {
-				exePath = downloadedExePath;
-			} else {
-				throw new Error('Could not find SsmsMin.exe after downloading');
-			}
-			// Add the command now that we have the exePath to run the tool with
-			context.subscriptions.push(
-				vscode.commands.registerCommand('adminToolExtWin.launchSsmsServerPropertiesDialog', handleLaunchSsmsServerPropertiesDialogCommand));
+            // Don't register the command if we couldn't find the EXE since it won't be able to do anything
+            if (downloadedExePath) {
+                exePath = downloadedExePath;
+            } else {
+                throw new Error('Could not find SsmsMin.exe after downloading');
+            }
 
-			Telemetry.sendTelemetryEvent('startup/ExtensionStarted', {
-				installationTime: String(installationComplete - installationStart),
-				beginningTimestamp: String(installationStart)
-			});
-		}
-		catch (err) {
-			Telemetry.sendTelemetryEvent('startup/ExtensionInitializationFailed');
-			console.error(`Error Initializing Admin Tool Extension for Windows - ${err}`);
-		}
-	}
+            // Register the commands now that we have the exePath to run the tool with
+            registerCommands(context);
+
+            Telemetry.sendTelemetryEvent('startup/ExtensionStarted', {
+                installationTime: String(installationComplete - installationStart),
+                beginningTimestamp: String(installationStart)
+            });
+        }
+        catch (err) {
+            Telemetry.sendTelemetryEvent('startup/ExtensionInitializationFailed');
+            console.error(`Error Initializing Admin Tool Extension for Windows - ${err}`);
+        }
+    }
 }
 
 export async function deactivate(): Promise<void> {
-	// If the extension is being deactivated we want to kill all processes that are still currently
-	// running otherwise they will continue to run as orphan processes. We use taskkill here in case
-	// they started off child processes of their own
-	runningProcesses.forEach(p => exec('taskkill /pid ' + p.pid + ' /T /F'));
+    // If the extension is being deactivated we want to kill all processes that are still currently
+    // running otherwise they will continue to run as orphan processes. We use taskkill here in case
+    // they started off child processes of their own
+    runningProcesses.forEach(p => exec('taskkill /pid ' + p.pid + ' /T /F'));
+}
+
+function registerCommands(context: vscode.ExtensionContext) {
+    context.subscriptions.push(
+        vscode.commands.registerCommand('adminToolExtWin.launchSsmsMinPropertiesDialog', handleLaunchSsmsMinPropertiesDialogCommand));
 }
 
 /**
  * Handler for command to launch SSMS Server Properties dialog
  * @param connectionId The connection context from the command
  */
-function handleLaunchSsmsServerPropertiesDialogCommand(connectionContext?: azdata.ObjectExplorerContext) {
-	if (connectionContext && connectionContext.connectionProfile) {
-		launchSsmsDialog(
-			/*action*/'sqla:Properties@Microsoft.SqlServer.Management.Smo.Server',
-			/*connectionProfile*/connectionContext.connectionProfile);
-	}
+async function handleLaunchSsmsMinPropertiesDialogCommand(connectionContext?: azdata.ObjectExplorerContext) {
+
+    if (connectionContext && connectionContext.connectionProfile) {
+
+        let oeNode: azdata.objectexplorer.ObjectExplorerNode;
+        let nodeType: string;
+        // Server node is a Connection node and so doesn't have the NodeInfo
+        if(connectionContext.isConnectionNode) {
+            nodeType = 'Server';
+            oeNode = undefined;
+        }
+        else if(connectionContext.nodeInfo && connectionContext.nodeInfo.nodeType) {
+            nodeType = connectionContext.nodeInfo.nodeType;
+            oeNode = await azdata.objectexplorer.getNode(connectionContext.connectionProfile.id, connectionContext.nodeInfo.nodePath);
+        }
+        else {
+            return;
+        }
+
+        let urn: string = await buildUrn(connectionContext.connectionProfile.serverName, oeNode);
+
+        launchSsmsDialog(
+            nodeTypeToUrnNameMapping[nodeType].action,
+            connectionContext.connectionProfile,
+            urn);
+    }
 }
 
 /**
@@ -97,48 +161,48 @@ function handleLaunchSsmsServerPropertiesDialogCommand(connectionContext?: azdat
  * @param urn The URN to pass to SsmsMin
  */
 function launchSsmsDialog(action: string, connectionProfile: azdata.IConnectionProfile, urn?: string) {
-	if (!exePath) {
-		vscode.window.showErrorMessage(localize('adminToolExtWin.noExeError', 'Unable to find SsmsMin.exe.'));
-		return;
-	}
+    if (!exePath) {
+        vscode.window.showErrorMessage(localize('adminToolExtWin.noExeError', 'Unable to find SsmsMin.exe.'));
+        return;
+    }
 
-	Telemetry.sendTelemetryEvent('LaunchSsmsDialog', { 'action': action });
+    Telemetry.sendTelemetryEvent('LaunchSsmsDialog', { 'action': action });
 
-	let params: LaunchSsmsDialogParams = {
-		action: action,
-		server: connectionProfile.serverName,
-		database: connectionProfile.databaseName,
-		password: connectionProfile.password,
-		user: connectionProfile.userName,
-		useAad: connectionProfile.authenticationType === 'AzureMFA',
-		urn: urn
-	};
-	let args = buildSsmsMinCommandArgs(params);
+    let params: LaunchSsmsDialogParams = {
+        action: action,
+        server: connectionProfile.serverName,
+        database: connectionProfile.databaseName,
+        password: connectionProfile.password,
+        user: connectionProfile.userName,
+        useAad: connectionProfile.authenticationType === 'AzureMFA',
+        urn: urn
+    };
+    let args = buildSsmsMinCommandArgs(params);
 
-	// This will be an async call since we pass in the callback
-	var proc: ChildProcess = exec(
+    // This will be an async call since we pass in the callback
+    var proc: ChildProcess = exec(
 	   /*command*/`"${exePath}" ${args}`,
 	   /*options*/undefined,
-		(execException, stdout, stderr) => {
-			// Process has exited so remove from map of running processes
-			runningProcesses.delete(proc.pid);
-			Telemetry.sendTelemetryEvent('LaunchSsmsDialogResult', {
-				'action': params.action,
-				'returnCode': execException && execException.code ? execException.code.toString() : '0'
-			});
-			let err = stderr.toString();
-			if (err !== '') {
-				console.warn(`Error calling SsmsMin with args '${args}' - ${err}`);
-			}
-		});
+        (execException, stdout, stderr) => {
+            // Process has exited so remove from map of running processes
+            runningProcesses.delete(proc.pid);
+            Telemetry.sendTelemetryEvent('LaunchSsmsDialogResult', {
+                'action': params.action,
+                'returnCode': execException && execException.code ? execException.code.toString() : '0'
+            });
+            let err = stderr.toString();
+            if (err !== '') {
+                console.warn(`Error calling SsmsMin with args '${args}' - ${err}`);
+            }
+        });
 
-	// If we're not using AAD the tool prompts for a password on stdin
-	if (params.useAad !== true) {
-		proc.stdin.end(params.password ? params.password : '');
-	}
+    // If we're not using AAD the tool prompts for a password on stdin
+    if (params.useAad !== true) {
+        proc.stdin.end(params.password ? params.password : '');
+    }
 
-	// Save the process into our map so we can make sure to stop them if we exit before shutting down
-	runningProcesses.set(proc.pid, proc);
+    // Save the process into our map so we can make sure to stop them if we exit before shutting down
+    runningProcesses.set(proc.pid, proc);
 }
 
 /**
@@ -148,10 +212,29 @@ function launchSsmsDialog(action: string, connectionProfile: azdata.IConnectionP
  * @param params The params used to build up the command parameter string
  */
 export function buildSsmsMinCommandArgs(params: LaunchSsmsDialogParams): string {
-	return `${params.action ? '-a "' + params.action.replace(/"/g, '\\"') + '"' : ''}\
-${params.server ? ' -S "' + params.server.replace(/"/g, '\\"') + '"' : ''}\
-${params.database ? ' -D "' + params.database.replace(/"/g, '\\"') + '"' : ''}\
-${params.useAad !== true && params.user ? ' -U "' + params.user.replace(/"/g, '\\"') + '"' : ''}\
+    return `${params.action ? '-a "' + backEscapeDoubleQuotes(params.action) + '"' : ''}\
+${params.server ? ' -S "' + backEscapeDoubleQuotes(params.server) + '"' : ''}\
+${params.database ? ' -D "' + backEscapeDoubleQuotes(params.database) + '"' : ''}\
+${params.useAad !== true && params.user ? ' -U "' + backEscapeDoubleQuotes(params.user) + '"' : ''}\
 ${params.useAad === true ? ' -G' : ''}\
-${params.urn ? ' -u "' + params.urn.replace(/"/g, '\\"') + '"' : ''}`;
+${params.urn ? ' -u "' + backEscapeDoubleQuotes(params.urn) + '"' : ''}`;
+}
+
+async function buildUrn(serverName: string, node: azdata.objectexplorer.ObjectExplorerNode): Promise<string> {
+    let urnNodes: string[] = [];
+    while(node !== undefined) {
+        // Server is special since it's a connection node - always add it as the root
+        if(node.nodeType === 'Server') {
+            break;
+        }
+        else if(node.nodeType !== 'Folder') {
+            urnNodes.push(node.metadata.schema && node.metadata.schema !== '' ?
+            `${nodeTypeToUrnNameMapping[node.nodeType].urnName}[@Name='${doubleEscapeSingleQuotes(node.metadata.name)}' and @Schema='${doubleEscapeSingleQuotes(node.metadata.schema)}']` :
+            `${nodeTypeToUrnNameMapping[node.nodeType].urnName}[@Name='${doubleEscapeSingleQuotes(node.metadata.name)}']`);
+        }
+        node = await node.getParent();
+    }
+    urnNodes.push(`Server[@Name='${doubleEscapeSingleQuotes(serverName)}']`);
+    // Nodes appended in reverse order so reverse them before joining into the URN string
+    return urnNodes.reverse().join('/');
 }

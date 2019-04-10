@@ -8,7 +8,6 @@ import { IMainContext } from 'vs/workbench/api/common/extHost.protocol';
 import { ExtHostObjectExplorerShape, SqlMainContext, MainThreadObjectExplorerShape } from 'sql/workbench/api/node/sqlExtHost.protocol';
 import * as azdata from 'azdata';
 import * as vscode from 'vscode';
-import { entries } from 'sql/base/common/objects';
 
 export class ExtHostObjectExplorer implements ExtHostObjectExplorerShape {
 
@@ -74,7 +73,15 @@ class ExtHostObjectExplorerNode implements azdata.objectexplorer.ObjectExplorerN
 	}
 
 	getParent(): Thenable<azdata.objectexplorer.ObjectExplorerNode> {
-		let parentPathEndIndex = this.nodePath.lastIndexOf('/');
+        let parentPathEndIndex: number = -1;
+        if(this.metadata && this.nodePath.endsWith(this.metadata.name)) {
+            let name: string = this.metadata.schema ? `${this.metadata.schema}.${this.metadata.name}` : this.metadata.name;
+            parentPathEndIndex = this.nodePath.lastIndexOf(name) - 1;
+        }
+        else {
+            parentPathEndIndex = this.nodePath.lastIndexOf('/');
+        }
+
 		if (parentPathEndIndex === -1) {
 			return Promise.resolve(undefined);
 		}

@@ -1,61 +1,201 @@
 {
-  "name": "admin-tool-ext-win",
-  "displayName": "Database Admin Tool Extensions for Windows",
-  "description": "Adds additional Windows-specific functionality to Azure Data Studio",
-  "version": "0.0.1",
-  "publisher": "Microsoft",
-  "preview": true,
-  "license": "https://raw.githubusercontent.com/Microsoft/azuredatastudio/master/LICENSE.txt",
-  "icon": "images/sqlserver.png",
-  "aiKey": "AIF-5574968e-856d-40d2-af67-c89a14e76412",
-  "engines": {
-    "vscode": "^1.30.1",
-    "sqlops": "*"
-  },
-  "activationEvents": [
-    "*"
-  ],
-  "main": "./out/main",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Microsoft/azuredatastudio.git"
-  },
-  "extensionDependencies": [
-    "Microsoft.mssql"
-  ],
-  "contributes": {
-    "commands": [
-      {
-        "command": "adminToolExtWin.launchSsmsServerPropertiesDialog",
-        "title": "%adminToolExtWin.launchSsmsServerPropertiesDialog%",
-        "category": "AdminToolExtWin"
-      }
-    ],
-    "menus": {
-      "commandPalette": [
-        {
-          "command": "adminToolExtWin.launchSsmsServerPropertiesDialog",
-          "when": "false"
-        }
-      ],
-      "objectExplorer/item/context": [
-        {
-          "command": "adminToolExtWin.launchSsmsServerPropertiesDialog",
-          "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Server",
-          "group": "AdminToolExtWin"
-        }
-      ]
+    "name": "admin-tool-ext-win",
+    "displayName": "Database Admin Tool Extensions for Windows",
+    "description": "Adds additional Windows-specific functionality to Azure Data Studio",
+    "version": "0.0.1",
+    "publisher": "Microsoft",
+    "preview": true,
+    "license": "https://raw.githubusercontent.com/Microsoft/azuredatastudio/master/LICENSE.txt",
+    "icon": "images/sqlserver.png",
+    "aiKey": "AIF-5574968e-856d-40d2-af67-c89a14e76412",
+    "engines": {
+        "vscode": "^1.30.1",
+        "sqlops": "*"
     },
-    "outputChannels": [
-      "admin-tool-ext-win"
-    ]
-  },
-  "dependencies": {
-    "service-downloader": "github:anthonydresser/service-downloader#0.1.5",
-    "vscode-extension-telemetry": "^0.0.15",
-    "vscode-nls": "^3.2.1"
-  },
-  "devDependencies": {
-    "vscode": "1.0.1"
-  }
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/main",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Microsoft/azuredatastudio.git"
+    },
+    "extensionDependencies": [
+        "Microsoft.mssql"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                "title": "%adminToolExtWin.propertiesMenuItem%",
+                "category": "AdminToolExtWin"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "false"
+                }
+            ],
+            "objectExplorer/item/context": [
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Server",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Database",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Table",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Column",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Index",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Statistic",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == View",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ServerLevelLogin",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ServerLevelServerRole",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ServerLevelCredential",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ServerLevelServerAudit",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ServerLevelServerAuditSpecification",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == StoredProcedure",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ScalarValuedFunction",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == TableValuedFunction",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == AggregateFunction",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Synonym",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Assembly",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == UserDefinedDataType",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == UserDefinedType",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == UserDefinedTableType",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Sequence",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == User",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == DatabaseRole",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ApplicationRole",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == Schema",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == SecurityPolicy",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == SecurityPolicie",
+                    "group": "z-AdminToolExt@2"
+                },
+                {
+                    "command": "adminToolExtWin.launchSsmsMinPropertiesDialog",
+                    "when": "isWindows && connectionProvider == MSSQL && nodeType && nodeType == ServerLevelLinkedServer",
+                    "group": "z-AdminToolExt@2"
+                }
+            ]
+        },
+        "outputChannels": [
+            "admin-tool-ext-win"
+        ]
+    },
+    "dependencies": {
+        "service-downloader": "github:anthonydresser/service-downloader#0.1.5",
+        "vscode-extension-telemetry": "^0.0.15",
+        "vscode-nls": "^3.2.1"
+    },
+    "devDependencies": {
+        "vscode": "1.0.1"
+    }
 }
