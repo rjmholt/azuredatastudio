@@ -66,6 +66,7 @@ export const options: Option[] = [
 	{ id: 'max-memory', type: 'string', cat: 't', description: localize('maxMemory', "Max memory size for a window (in Mbytes).") },
 
 	{ id: 'remote', type: 'string' },
+	{ id: 'locate-extension', type: 'string' },
 	{ id: 'extensionDevelopmentPath', type: 'string' },
 	{ id: 'extensionTestsPath', type: 'string' },
 	{ id: 'debugId', type: 'string' },
@@ -196,7 +197,7 @@ function wrapText(text: string, columns: number): string[] {
 	return lines;
 }
 
-export function buildHelpMessage(productName: string, executableName: string, version: string, isOptionSupported = (_: Option) => true): string {
+export function buildHelpMessage(productName: string, executableName: string, version: string, isOptionSupported = (_: Option) => true, isPipeSupported = true): string {
 	const columns = (process.stdout).isTTY && (process.stdout).columns || 80;
 
 	let categories = new HelpCategories();
