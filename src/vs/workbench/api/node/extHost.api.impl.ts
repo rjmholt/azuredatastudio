@@ -257,7 +257,7 @@ export function createApiFactory(
 				return extHostClipboard;
 			},
 			openExternal(uri: URI) {
-				return extHostWindow.openUri(uri);
+				return extHostWindow.openUri(uri, { allowTunneling: !!initData.remoteAuthority });
 			}
 		});
 
@@ -814,6 +814,7 @@ export function createApiFactory(
 			Range: extHostTypes.Range,
 			RelativePattern: extHostTypes.RelativePattern,
 			ResolvedAuthority: extHostTypes.ResolvedAuthority,
+			RemoteAuthorityResolverError: extHostTypes.RemoteAuthorityResolverError,
 			Selection: extHostTypes.Selection,
 			SelectionRange: extHostTypes.SelectionRange,
 			ShellExecution: extHostTypes.ShellExecution,
