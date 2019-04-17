@@ -6,12 +6,13 @@
 'use strict';
 
 import * as assert from 'assert';
+import * as TypeMoq from 'typemoq';
 import * as Platform from 'vs/platform/registry/common/platform';
 import { ViewletDescriptor, Extensions, Viewlet, ViewletRegistry } from 'vs/workbench/browser/viewlet';
 import * as Types from 'vs/base/common/types';
+import { DataExplorerViewlet } from 'sql/workbench/parts/dataExplorer/browser/dataExplorerViewlet';
 
 suite('Data Explorer Viewlet', () => {
-
 	class DataExplorerTestViewlet extends Viewlet {
 
 		constructor() {
