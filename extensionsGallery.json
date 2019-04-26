@@ -1371,25 +1371,38 @@
 					"flags": "preview"
 				},
 				{
-					"extensionId": "35",
+					"flags": "preview",
 					"extensionName": "PowerShell",
-					"displayName": "PowerShell",
+					"statistics": [],
 					"shortDescription": "Develop PowerShell scripts in Azure Data Studio",
 					"publisher": {
-						"displayName": "Microsoft",
+						"publisherName": "Microsoft",
 						"publisherId": "Microsoft",
-						"publisherName": "Microsoft"
+						"displayName": "Microsoft"
 					},
+					"extensionId": 35,
+					"displayName": "PowerShell",
 					"versions": [
 						{
-							"version": "1.11.0",
-							"lastUpdated": "3/18/2019",
 							"assetUri": "",
-							"fallbackAssetUri": "fallbackAssetUri",
+							"properties": [
+								{
+									"key": "Microsoft.VisualStudio.Code.ExtensionDependencies",
+									"value": ""
+								},
+								{
+									"key": "Microsoft.VisualStudio.Code.Engine",
+									"value": ">=0.32.1"
+								},
+								{
+									"key": "Microsoft.VisualStudio.Services.Links.Source",
+									"value": "https://github.com/PowerShell/vscode-powershell/"
+								}
+							],
 							"files": [
 								{
 									"assetType": "Microsoft.VisualStudio.Services.VSIXPackage",
-									"source": "https://sqlopsextensions.blob.core.windows.net/extensions/powershell/PowerShell-1.11.0.vsix"
+									"source": "https://sqlopsextensions.blob.core.windows.net/extensions/powershell/PowerShell-1.12.1.vsix"
 								},
 								{
 									"assetType": "Microsoft.VisualStudio.Services.Icons.Default",
@@ -1408,24 +1421,11 @@
 									"source": "https://raw.githubusercontent.com/PowerShell/vscode-powershell/master/LICENSE.txt"
 								}
 							],
-							"properties": [
-								{
-									"key": "Microsoft.VisualStudio.Code.ExtensionDependencies",
-									"value": ""
-								},
-								{
-									"key": "Microsoft.VisualStudio.Code.Engine",
-									"value": ">=0.32.1"
-								},
-								{
-									"key": "Microsoft.VisualStudio.Services.Links.Source",
-									"value": "https://github.com/PowerShell/vscode-powershell/"
-								}
-							]
+							"version": "1.12.1",
+							"fallbackAssetUri": "fallbackAssetUri",
+							"lastUpdated": "4/26/2019"
 						}
-					],
-					"statistics": [],
-					"flags": "preview"
+					]
 				},
                 {
                     "extensionId": "36",
